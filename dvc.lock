@@ -1,0 +1,46 @@
+schema: '2.0'
+stages:
+  prepare_capacity_factors:
+    cmd: uv run python pipeline/01_prepare_capacity_factors.py
+    deps:
+    - path: pipeline/01_prepare_capacity_factors.py
+      hash: md5
+      md5: 1f720afe847782ac2ca0d373009defff
+      size: 3721
+    outs:
+    - path: data/processed/capacity_factors_de_national.parquet
+      hash: md5
+      md5: c2f4b994b4ecd73590903fc35ddec7e3
+      size: 2087756
+  dunkelflaute_battery_starter:
+    cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
+      python3 --output book/notebooks/02_dunkelflaute_battery_starter.ipynb 
+      pipeline/02_dunkelflaute_battery_starter.py && uv run python 
+      pipeline/_strip_jupytext_metadata.py 
+      book/notebooks/02_dunkelflaute_battery_starter.ipynb
+    deps:
+    - path: data/processed/capacity_factors_de_national.parquet
+      hash: md5
+      md5: c2f4b994b4ecd73590903fc35ddec7e3
+      size: 2087756
+    - path: hpsp/capacity_assumptions.py
+      hash: md5
+      md5: 011e0b826d2b59057b2d53ef176cf798
+      size: 1510
+    - path: pipeline/02_dunkelflaute_battery_starter.py
+      hash: md5
+      md5: 62bcab25820ce0f74d4d23d0d3fb1032
+      size: 7048
+    outs:
+    - path: book/notebooks/02_dunkelflaute_battery_starter.ipynb
+      hash: md5
+      md5: 6f286481891a575471b3ae38aa5e8813
+      size: 12533
+    - path: output/images/02_battery_sensitivity.png
+      hash: md5
+      md5: dd72742a5442314b2e1fde55cf11f547
+      size: 55370
+    - path: output/images/02_dunkelflaute_event_durations.png
+      hash: md5
+      md5: bd94ef0c54e0e26673735d1b53de4782
+      size: 31674

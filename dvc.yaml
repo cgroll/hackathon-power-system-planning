@@ -1,0 +1,31 @@
+stages:
+  prepare_capacity_factors:
+    cmd: uv run python pipeline/01_prepare_capacity_factors.py
+    deps:
+      - pipeline/01_prepare_capacity_factors.py
+      # Note: also reads ~/research/pecd-replication/data/processed/*.parquet,
+      # which lives outside this repo and is intentionally not tracked as a
+      # formal DVC dependency — see the script's module docstring.
+    outs:
+      - data/processed/capacity_factors_de_national.parquet:
+          persist: true
+
+  dunkelflaute_battery_starter:
+    cmd: >-
+      MPLBACKEND=Agg uv run jupytext --to notebook --execute
+      --set-kernel python3
+      --output book/notebooks/02_dunkelflaute_battery_starter.ipynb
+      pipeline/02_dunkelflaute_battery_starter.py &&
+      uv run python pipeline/_strip_jupytext_metadata.py
+      book/notebooks/02_dunkelflaute_battery_starter.ipynb
+    deps:
+      - pipeline/02_dunkelflaute_battery_starter.py
+      - hpsp/capacity_assumptions.py
+      - data/processed/capacity_factors_de_national.parquet
+    outs:
+      - book/notebooks/02_dunkelflaute_battery_starter.ipynb:
+          cache: false
+      - output/images/02_dunkelflaute_event_durations.png:
+          cache: false
+      - output/images/02_battery_sensitivity.png:
+          cache: false

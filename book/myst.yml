@@ -1,0 +1,20 @@
+version: 1
+project:
+  title: Hackathon Power System Planning
+  authors:
+    - name: Chris
+  copyright: '2026'
+  exclude:
+    - _build
+    - Thumbs.db
+    - .DS_Store
+    - '**.ipynb_checkpoints'
+  toc:
+    - file: markdown/index.md
+    - title: Analysis
+      children:
+        - file: notebooks/02_dunkelflaute_battery_starter.ipynb
+site:
+  options:
+    folders: true
+  template: book-theme
