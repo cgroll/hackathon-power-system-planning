@@ -20,6 +20,21 @@ data/processed/*
 !data/downloads/.gitkeep
 !data/processed/.gitkeep
 
+# Exception: this repo's actual hackathon deliverables (small, final,
+# `cache: false` in dvc.yaml) ship directly in git so teams have them right
+# after cloning, no CDS/MaStR account needed — see PROJECT.md, 2026-09-18.
+# Everything else under data/processed/ (in particular _intermediate/,
+# rebuilt from data/downloads/) stays git-ignored.
+!data/processed/capacity_factors_de_national.parquet
+!data/processed/demand_de_national.parquet
+!data/processed/capacity_factors_zonal_wind_onshore.parquet
+!data/processed/capacity_factors_zonal_wind_offshore.parquet
+!data/processed/capacity_factors_zonal_solar.parquet
+!data/processed/mastr_units_wind_solar.parquet
+!data/processed/pecd_region_mask_peon.parquet
+!data/processed/pecd_region_mask_peof.parquet
+!data/processed/generation_de_by_technology.parquet
+
 # Secrets
 .env
 

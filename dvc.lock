@@ -1,46 +1,146 @@
 schema: '2.0'
 stages:
-  prepare_capacity_factors:
-    cmd: uv run python pipeline/01_prepare_capacity_factors.py
+  download_pecd_capacity_factors:
+    cmd: uv run python pipeline/01_download_pecd_capacity_factors.py
     deps:
-    - path: pipeline/01_prepare_capacity_factors.py
+    - path: hpsp/cds.py
       hash: md5
-      md5: 1f720afe847782ac2ca0d373009defff
-      size: 3721
+      md5: de69c8bc48070dd7da6ab36a93477a61
+      size: 1117
+    - path: pipeline/01_download_pecd_capacity_factors.py
+      hash: md5
+      md5: 4005f7a144aec8a4e681fc76d4060244
+      size: 4382
+    outs:
+    - path: data/downloads/pecd/
+      hash: md5
+      md5: c980fb6f1f5b98da2af36d47ec186de0.dir
+      size: 1711784635
+      nfiles: 30
+  process_pecd_capacity_factors:
+    cmd: uv run python pipeline/02_process_pecd_capacity_factors.py
+    deps:
+    - path: data/downloads/pecd/
+      hash: md5
+      md5: c980fb6f1f5b98da2af36d47ec186de0.dir
+      size: 1711784635
+      nfiles: 30
+    - path: hpsp/pecd_io.py
+      hash: md5
+      md5: 555e79a263542694162c26b7961b9640
+      size: 2234
+    - path: pipeline/02_process_pecd_capacity_factors.py
+      hash: md5
+      md5: 043c850994fc6fa20194cf94ff0bceff
+      size: 3179
+    outs:
+    - path: data/processed/_intermediate/capacity_factors_zonal_solar.parquet
+      hash: md5
+      md5: 8167643548bb0cdcb3e24480e060bca6
+      size: 141266142
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet
+      hash: md5
+      md5: f5754bdc0e2c1126739069c516e6d9a7
+      size: 8629394
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet
+      hash: md5
+      md5: f6fefa4274a35902103804da6fbfbe00
+      size: 8245028
+  prepare_mastr_track_a_inputs:
+    cmd: uv run python pipeline/03_prepare_mastr_track_a_inputs.py
+    deps:
+    - path: pipeline/03_prepare_mastr_track_a_inputs.py
+      hash: md5
+      md5: e51e5ac486c549983bcf7904de266228
+      size: 7602
+    outs:
+    - path: data/processed/mastr_units_wind_solar.parquet
+      hash: md5
+      md5: 82bb89a20f067a312f23ac2c8829cde1
+      size: 36397241
+    - path: data/processed/pecd_region_mask_peof.parquet
+      hash: md5
+      md5: 7d1b23dac7ebd49e74070bd6aaa909a7
+      size: 4641
+    - path: data/processed/pecd_region_mask_peon.parquet
+      hash: md5
+      md5: c364ffb40e983990af73b3105bc484e9
+      size: 7024
+  prepare_capacity_factors_national:
+    cmd: uv run python pipeline/04_prepare_capacity_factors_national.py
+    deps:
+    - path: data/processed/_intermediate/capacity_factors_zonal_solar.parquet
+      hash: md5
+      md5: 8167643548bb0cdcb3e24480e060bca6
+      size: 141266142
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet
+      hash: md5
+      md5: f5754bdc0e2c1126739069c516e6d9a7
+      size: 8629394
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet
+      hash: md5
+      md5: f6fefa4274a35902103804da6fbfbe00
+      size: 8245028
+    - path: pipeline/04_prepare_capacity_factors_national.py
+      hash: md5
+      md5: 90b9581e3aad2812d0fe99b50ef2aafd
+      size: 3547
     outs:
     - path: data/processed/capacity_factors_de_national.parquet
       hash: md5
-      md5: c2f4b994b4ecd73590903fc35ddec7e3
-      size: 2087756
-  dunkelflaute_battery_starter:
-    cmd: MPLBACKEND=Agg uv run jupytext --to notebook --execute --set-kernel 
-      python3 --output book/notebooks/02_dunkelflaute_battery_starter.ipynb 
-      pipeline/02_dunkelflaute_battery_starter.py && uv run python 
-      pipeline/_strip_jupytext_metadata.py 
-      book/notebooks/02_dunkelflaute_battery_starter.ipynb
+      md5: 2d943239d0925a9fd273f7eb47ef89a7
+      size: 10313268
+  prepare_capacity_factors_zonal:
+    cmd: uv run python pipeline/05_prepare_capacity_factors_zonal.py
     deps:
-    - path: data/processed/capacity_factors_de_national.parquet
+    - path: data/processed/_intermediate/capacity_factors_zonal_solar.parquet
       hash: md5
-      md5: c2f4b994b4ecd73590903fc35ddec7e3
-      size: 2087756
-    - path: hpsp/capacity_assumptions.py
+      md5: 8167643548bb0cdcb3e24480e060bca6
+      size: 141266142
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet
       hash: md5
-      md5: 011e0b826d2b59057b2d53ef176cf798
-      size: 1510
-    - path: pipeline/02_dunkelflaute_battery_starter.py
+      md5: f5754bdc0e2c1126739069c516e6d9a7
+      size: 8629394
+    - path: 
+        data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet
       hash: md5
-      md5: 62bcab25820ce0f74d4d23d0d3fb1032
-      size: 7048
+      md5: f6fefa4274a35902103804da6fbfbe00
+      size: 8245028
+    - path: pipeline/05_prepare_capacity_factors_zonal.py
+      hash: md5
+      md5: 5b3359c02f4e8c73e2471937590a90fe
+      size: 1720
     outs:
-    - path: book/notebooks/02_dunkelflaute_battery_starter.ipynb
+    - path: data/processed/capacity_factors_zonal_solar.parquet
       hash: md5
-      md5: 6f286481891a575471b3ae38aa5e8813
-      size: 12533
-    - path: output/images/02_battery_sensitivity.png
+      md5: 913e54dfb0a6317099a83a60b3ce2bf5
+      size: 51576891
+    - path: data/processed/capacity_factors_zonal_wind_offshore.parquet
       hash: md5
-      md5: dd72742a5442314b2e1fde55cf11f547
-      size: 55370
-    - path: output/images/02_dunkelflaute_event_durations.png
+      md5: fc0302a6df4558f45f41a11788b71060
+      size: 2929080
+    - path: data/processed/capacity_factors_zonal_wind_onshore.parquet
       hash: md5
-      md5: bd94ef0c54e0e26673735d1b53de4782
-      size: 31674
+      md5: 0284b97259860845add1711ae124e113
+      size: 2296648
+  prepare_demand_and_generation:
+    cmd: uv run python pipeline/06_prepare_demand_and_generation.py
+    deps:
+    - path: pipeline/06_prepare_demand_and_generation.py
+      hash: md5
+      md5: 813acd7adfecb670ca5ee26ef79119c3
+      size: 2166
+    outs:
+    - path: data/processed/demand_de_national.parquet
+      hash: md5
+      md5: 8a9d3393784b0857a51569c3d5e431fa
+      size: 990384
+    - path: data/processed/generation_de_by_technology.parquet
+      hash: md5
+      md5: 259f600389a9264c8db91598b4c08e65
+      size: 1543242

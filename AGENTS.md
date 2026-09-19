@@ -20,7 +20,8 @@ project-root/
 │   └── paths.py             # Centralized path configuration
 ├── pipeline/                # Data pipeline scripts
 │   ├── 01_download_*.py     # Pure data acquisition (no charts)
-│   ├── 02_analyse_*.py      # Analysis scripts → become book notebooks
+│   ├── 0N_process_*.py / 0N_prepare_*.py  # Pure data processing (no charts)
+│   ├── 0N_analyse_*.py      # Analysis scripts → become book notebooks
 │   └── _strip_jupytext_metadata.py  # Shared post-processing helper
 ├── book/                    # MyST Jupyter Book source
 │   ├── notebooks/           # Executed .ipynb files (produced by DVC)
@@ -28,7 +29,8 @@ project-root/
 │   └── myst.yml             # Book configuration and table of contents
 ├── data/
 │   ├── downloads/           # Raw downloaded data (git-ignored, DVC-cached)
-│   └── processed/           # Processed/transformed data (git-ignored, DVC-cached)
+│   └── processed/           # Final deliverables git-tracked (`cache: false`);
+│                             # build-only intermediates (_intermediate/) git-ignored
 ├── output/
 │   ├── images/              # Chart images saved by pipeline scripts
 │   └── reports/             # Report files
@@ -78,11 +80,18 @@ must be committed to git).
 ### `cache: false` for git-tracked outputs
 
 By default DVC moves stage outputs into its own cache and git-ignores them —
-appropriate for `data/downloads/` and `data/processed/`. But
-`book/notebooks/*.ipynb` and `output/images/*.png` should stay as normal
-files tracked directly by git (see [Git Conventions](#git-conventions)), so
-every such output is declared with `cache: false`. DVC still hashes the file
-to detect staleness; it just doesn't duplicate it into `.dvc/cache`.
+appropriate for `data/downloads/` (raw, large, regenerable) and any
+build-only intermediate under `data/processed/_intermediate/`. But
+`book/notebooks/*.ipynb`, `output/images/*.png`, and — in this repo — the
+final small `data/processed/*.parquet` deliverables teams actually consume
+should stay as normal files tracked directly by git (see
+[Git Conventions](#git-conventions)), so every such output is declared with
+`cache: false`. DVC still hashes the file to detect staleness; it just
+doesn't duplicate it into `.dvc/cache`. Whether a given `data/processed/`
+output should be `cache: false` is a per-project call, not a fixed rule:
+here it's small final Track A/B parquet files hackathon teams need right
+after cloning (see PROJECT.md, 2026-09-18); a project with genuinely large
+processed outputs would keep the default instead.
 
 ### `persist: true` for downloaded data
 
@@ -251,16 +260,19 @@ Key paths:
 | Tracked | Not tracked |
 |---------|-------------|
 | `pipeline/*.py` source files | `data/downloads/*` |
-| `book/notebooks/*.ipynb` generated notebooks | `data/processed/*` |
+| `book/notebooks/*.ipynb` generated notebooks | `data/processed/_intermediate/*` |
 | `output/images/*.png` generated charts | `.venv/` |
 | `book/markdown/*.md` static content | |
 | `dvc.yaml`, `dvc.lock` | |
+| final `data/processed/*.parquet` deliverables (this repo's exception — see `.gitignore`) | |
 
-The `.ipynb` notebooks and images are tracked so the book can be rebuilt
-from git without re-running the pipeline (CI only runs `myst build`). This
-is why they are declared with `cache: false` in `dvc.yaml` — DVC still
-hashes them to detect staleness, but the files themselves live in git, not
-in `.dvc/cache`.
+The `.ipynb` notebooks, images, and (in this repo) the final small
+`data/processed/*.parquet` outputs are tracked so both the book and the
+hackathon data can be used straight from a fresh clone without re-running
+the pipeline. This is why they are declared with `cache: false` in
+`dvc.yaml` — DVC still hashes them to detect staleness, but the files
+themselves live in git, not in `.dvc/cache`. Build-only intermediates
+(`data/processed/_intermediate/`) stay untracked, same as raw downloads.
 
 ## Workflow Summary
 

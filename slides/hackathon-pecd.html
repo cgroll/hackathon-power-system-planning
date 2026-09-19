@@ -1,0 +1,236 @@
+<title>PECD Hackathon Tracks</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #E7EBEF;
+    --slide: #FBFCFD;
+    --ink: #16202E;
+    --muted: #5C6B7A;
+    --faint: #8494A2;
+    --hair: #D3DAE0;
+    --panel: #F1F4F7;
+    --a: #178795;        /* Track A / modeled / PECD — teal */
+    --a-soft: #22A6B4;
+    --b: #C87C1E;        /* Track B / observed / SMARD — amber */
+    --b-soft: #E29A38;
+    --warn: #C05A3E;     /* congestion — muted red-clay */
+    --shadow: 0 12px 40px -18px rgba(20,32,46,.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #070E16; --slide: #0E1B27; --ink: #EAF0F4; --muted: #93A4B2; --faint: #64757F;
+      --hair: #22323F; --panel: #14232F;
+      --a: #43C7D4; --a-soft: #2C9AA8; --b: #E8A23D; --b-soft: #C9862C; --warn: #E8795B;
+      --shadow: 0 18px 50px -22px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #070E16; --slide: #0E1B27; --ink: #EAF0F4; --muted: #93A4B2; --faint: #64757F;
+    --hair: #22323F; --panel: #14232F;
+    --a: #43C7D4; --a-soft: #2C9AA8; --b: #E8A23D; --b-soft: #C9862C; --warn: #E8795B;
+    --shadow: 0 18px 50px -22px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: clamp(12px, 3vw, 40px);
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace; }
+  .deck { display: flex; flex-direction: column; gap: clamp(16px, 3vw, 34px); align-items: center; }
+
+  .slide {
+    width: 100%; max-width: 1180px; aspect-ratio: 16 / 9;
+    background: var(--slide); border: 1px solid var(--hair); border-radius: 14px;
+    box-shadow: var(--shadow); padding: clamp(22px, 3.6vw, 50px);
+    display: flex; flex-direction: column; container-type: inline-size; overflow: hidden;
+  }
+
+  .eyebrow {
+    font-size: clamp(9px, .95cqi, 13px); letter-spacing: .24em; text-transform: uppercase;
+    font-weight: 650; margin: 0 0 8px; color: var(--a); display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow.b { color: var(--b); }
+  .eyebrow .n { color: var(--faint); font-weight: 600; letter-spacing: .1em; }
+  h1 { font-size: clamp(20px, 3cqi, 40px); line-height: 1.03; margin: 0; font-weight: 750; letter-spacing: -.015em; text-wrap: balance; }
+  .lead { margin: clamp(10px,1.6cqi,18px) 0 0; font-size: clamp(12px, 1.5cqi, 20px); color: var(--muted); line-height: 1.4; max-width: 56ch; font-weight: 450; }
+  .lead b { color: var(--ink); font-weight: 650; }
+
+  .body { flex: 1; display: flex; min-height: 0; margin-top: clamp(14px, 2.4cqi, 30px); }
+
+  ul.pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: clamp(9px,1.5cqi,16px); }
+  ul.pts li { position: relative; padding-left: 26px; font-size: clamp(11px,1.3cqi,17px); line-height: 1.4; }
+  ul.pts li::before { content: ""; position: absolute; left: 2px; top: .5em; width: 8px; height: 8px; border-radius: 2px; background: var(--a); transform: translateY(-50%) rotate(45deg); }
+  ul.pts.b li::before { background: var(--b); }
+  ul.pts li b { font-weight: 680; }
+  .hl { color: var(--a); font-weight: 680; } .hl.d { color: var(--b); font-weight: 680; }
+  .q { font-weight: 720; }
+
+  /* ---- cover: two track cards ---- */
+  .tracks { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(18px,2.8cqi,36px); width: 100%; }
+  .tcard { border: 1px solid var(--hair); border-radius: 14px; padding: clamp(16px,2.4cqi,28px); background: var(--panel); display: flex; flex-direction: column; gap: clamp(8px,1.2cqi,14px); }
+  .tcard.A { border-top: 5px solid var(--a); }
+  .tcard.B { border-top: 5px solid var(--b); }
+  .tcard .badge { font-size: clamp(9px,.95cqi,12px); font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+  .tcard.A .badge { color: var(--a); } .tcard.B .badge { color: var(--b); }
+  .tcard h2 { margin: 0; font-size: clamp(15px,1.95cqi,25px); font-weight: 730; line-height: 1.08; letter-spacing: -.01em; }
+  .tcard p { margin: 0; font-size: clamp(10px,1.18cqi,15px); color: var(--muted); line-height: 1.4; }
+  .tcard .verb { font-size: clamp(10px,1.15cqi,14px); font-weight: 700; }
+  .tcard.A .verb { color: var(--a); } .tcard.B .verb { color: var(--b); }
+
+  /* ---- Track A chart ---- */
+  .split { display: grid; grid-template-columns: 1.25fr 1fr; gap: clamp(22px,3.4cqi,46px); width: 100%; align-items: center; }
+  .chartwrap { background: var(--panel); border: 1px solid var(--hair); border-radius: 12px; padding: clamp(12px,1.8cqi,20px); }
+  .chartwrap svg { width: 100%; height: auto; display: block; }
+  .chartwrap .cap { font-size: clamp(9px,1.02cqi,13px); color: var(--muted); margin-top: 8px; line-height: 1.35; }
+  .chartwrap .cap b { color: var(--ink); }
+
+  /* ---- Track B pipeline ---- */
+  .pipe { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px,2.4cqi,34px); width: 100%; }
+  .branch { display: flex; flex-direction: column; gap: clamp(6px,.9cqi,10px); }
+  .branch .head { font-size: clamp(9px,.98cqi,12.5px); font-weight: 750; letter-spacing: .1em; text-transform: uppercase; text-align: center; margin-bottom: 2px; }
+  .branch.m .head { color: var(--a); } .branch.o .head { color: var(--b); }
+  .chip { border: 1px solid var(--hair); border-radius: 9px; background: var(--slide); padding: clamp(8px,1.15cqi,13px) clamp(10px,1.3cqi,15px); text-align: center; }
+  .chip .v { font-size: clamp(10.5px,1.24cqi,16px); font-weight: 700; line-height: 1.12; }
+  .chip .m { font-size: clamp(8px,.9cqi,11.5px); color: var(--muted); line-height: 1.25; margin-top: 2px; }
+  .branch.m .chip.key { border-color: color-mix(in srgb,var(--a) 55%,var(--hair)); background: color-mix(in srgb,var(--a) 9%,var(--slide)); }
+  .branch.o .chip.key { border-color: color-mix(in srgb,var(--b) 55%,var(--hair)); background: color-mix(in srgb,var(--b) 9%,var(--slide)); }
+  .chip.cong { border-color: color-mix(in srgb,var(--warn) 55%,var(--hair)); background: color-mix(in srgb,var(--warn) 9%,var(--slide)); }
+  .chip.cong .v { color: var(--warn); }
+  .op { text-align: center; font-size: clamp(12px,1.5cqi,19px); font-weight: 800; color: var(--faint); line-height: 1; }
+  .merge { margin-top: clamp(10px,1.6cqi,18px); display: flex; align-items: center; justify-content: center; gap: 14px;
+    background: color-mix(in srgb, var(--a) 8%, var(--slide)); border: 1px solid color-mix(in srgb,var(--a) 26%,var(--hair));
+    border-radius: 11px; padding: clamp(10px,1.5cqi,16px) clamp(14px,2cqi,22px); text-align: center; }
+  .merge .lbl { font-size: clamp(11px,1.4cqi,18px); font-weight: 700; }
+  .merge .lbl b { color: var(--a); }
+  .vs { flex-shrink: 0; font-size: clamp(10px,1.1cqi,13px); font-weight: 800; letter-spacing: .08em; color: var(--faint); }
+
+  .kicker { margin-top: clamp(10px,1.6cqi,18px); font-size: clamp(10px,1.28cqi,16px); font-weight: 600; color: var(--ink); text-wrap: balance; }
+  .kicker .g { color: var(--warn); font-weight: 750; }
+
+  footer { margin-top: auto; padding-top: clamp(8px,1.2cqi,14px); font-size: clamp(8px,.9cqi,11.5px); color: var(--faint); letter-spacing: .04em; display: flex; justify-content: space-between; gap: 16px; }
+  footer .defs { color: var(--faint); }
+
+  @page { size: 13.333in 7.5in; margin: 0; }
+  @media print {
+    :root { color-scheme: light; }
+    body { padding: 0; background: #fff; }
+    .deck { gap: 0; }
+    .slide { max-width: none; width: 13.333in; height: 7.5in; aspect-ratio: auto; border: none; border-radius: 0; box-shadow: none; page-break-after: always; break-after: page; }
+    .slide:last-child { page-break-after: avoid; }
+  }
+</style>
+
+<div class="deck">
+
+  <!-- ============ SLIDE 1 — COVER ============ -->
+  <section class="slide">
+    <p class="eyebrow"><span class="n">Hackathon</span> · Two tracks, one dataset</p>
+    <h1>Putting PECD&nbsp;v4.2 to work</h1>
+    <p class="lead">Two challenges built on the <b>Pan-European Climate Database</b> (ENTSO-E) capacity factors — one checks the data against reality, one designs future systems.</p>
+    <p style="margin:clamp(8px,1.2cqi,14px) 0 0; font-size:clamp(10px,1.18cqi,15px); color:var(--muted); max-width:64ch; line-height:1.4;"><b style="color:var(--ink)">Capacity factor</b> = the share of a plant’s maximum rated output it actually delivers over time — near 0% when wind and sun are absent, 100% at full power.</p>
+
+    <div class="body">
+      <div class="tracks">
+        <div class="tcard A">
+          <span class="badge">Track A · Validate</span>
+          <h2>Do PECD capacity factors match the meter?</h2>
+          <p>Test PECD against observed grid power, using the real historic fleet — and correct for grid congestion to compare like with like.</p>
+          <p style="margin:0; font-size:clamp(10px,1.15cqi,14px); line-height:1.4; color:var(--a); font-weight:650;">If it holds, weather + fleet data alone reconstruct output — so a weather forecast becomes an energy-output forecast.</p>
+          <span class="verb">Looks back → ground truth</span>
+        </div>
+        <div class="tcard B">
+          <span class="badge">Track B · Plan</span>
+          <h2>How much wind &amp; PV to survive a Dunkelflaute?</h2>
+          <p>Use PECD capacity factors to size renewable build-out against worst-case low-wind, low-sun spells — and see how batteries and country geography change the answer.</p>
+          <span class="verb">Looks forward → system design</span>
+        </div>
+      </div>
+    </div>
+    <footer><span>PECD v4.2 · Hackathon tracks</span><span>01 / 03</span></footer>
+  </section>
+
+  <!-- ============ SLIDE 2 — TRACK A (Validation) ============ -->
+  <section class="slide">
+    <p class="eyebrow"><span class="n">Track A</span> · Validation against reality</p>
+    <h1>How well does PECD match observed grid power?</h1>
+    <p class="lead">PECD is <b>pre-congestion</b> — what the weather allowed. SMARD is <b>post-congestion</b> — what the grid accepted. Close that gap, and you can measure how well PECD tracks reality.</p>
+
+    <div class="body" style="flex-direction:column; justify-content:center;">
+      <div class="pipe">
+        <div class="branch m">
+          <div class="head">Modeled — pre-congestion</div>
+          <div class="chip"><div class="v">PECD v4.2 capacity factors</div><div class="m">hourly, per technology</div></div>
+          <div class="op">×</div>
+          <div class="chip"><div class="v">MaStR installed fleet</div><div class="m">historic snapshots, by tech</div></div>
+          <div class="op">=</div>
+          <div class="chip key"><div class="v">Modeled generation</div><div class="m">meteorological potential</div></div>
+        </div>
+
+        <div class="branch o">
+          <div class="head">Observed — post-congestion</div>
+          <div class="chip"><div class="v">SMARD grid power</div><div class="m">actual generation fed in</div></div>
+          <div class="op">+</div>
+          <div class="chip cong"><div class="v">Congestion / redispatch data</div><div class="m">curtailed &amp; capped output</div></div>
+          <div class="op">=</div>
+          <div class="chip key"><div class="v">Adjusted observed</div><div class="m">reconstructed potential</div></div>
+        </div>
+      </div>
+
+      <div class="merge">
+        <span class="lbl">Modeled</span>
+        <span class="vs">COMPARE ⇄</span>
+        <span class="lbl">Adjusted observed → <b>how well does PECD track reality?</b></span>
+      </div>
+
+      <p class="kicker">The <span class="g">congestion correction</span> is the crux: without it we compare weather potential against a grid-limited meter and blame PECD for the grid’s limits.</p>
+    </div>
+    <footer>
+      <span class="defs">MaStR = Marktstammdatenregister · SMARD = Bundesnetzagentur market data · PECD = Pan-European Climate Database</span>
+      <span>02 / 03</span>
+    </footer>
+  </section>
+
+  <!-- ============ SLIDE 3 — TRACK B (Planning) ============ -->
+  <section class="slide">
+    <p class="eyebrow b"><span class="n">Track B</span> · Planning energy systems</p>
+    <h1>Sizing renewables to survive the Dunkelflaute</h1>
+    <p class="lead">PECD gives <b>decades of hourly capacity factors</b> for wind &amp; PV across the EU. Size the build-out against the events that actually break the system — the multi-day lulls.</p>
+
+    <div class="body">
+      <div class="split">
+        <ul class="pts b">
+          <li><span class="q">How much installed wind + PV</span> do we need so supply meets demand <b>through a Dunkelflaute</b> — a prolonged low-wind, low-sun spell?</li>
+          <li>Size against the <b>worst events, not the average</b>: the binding constraint is the multi-day lull, not the annual mean.</li>
+          <li>Add <span class="hl">battery flexibility</span>: how much does storage shrink the required overbuild? Trade GW of capacity for GWh of storage.</li>
+          <li>Compare across the EU: wind-rich <span class="hl">north</span> vs solar-rich <span class="hl d">south</span>, small vs large countries — the resilient mix differs.</li>
+        </ul>
+
+        <div class="chartwrap">
+          <svg viewBox="0 0 340 190" role="img" aria-label="Renewable output collapsing below demand during a Dunkelflaute">
+            <!-- axes -->
+            <line x1="30" y1="162" x2="332" y2="162" stroke="var(--hair)" stroke-width="1.5"/>
+            <line x1="30" y1="18" x2="30" y2="162" stroke="var(--hair)" stroke-width="1.5"/>
+            <!-- dunkelflaute shaded band -->
+            <rect x="126" y="18" width="104" height="144" fill="var(--warn)" opacity="0.10"/>
+            <line x1="126" y1="18" x2="126" y2="162" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <line x1="230" y1="18" x2="230" y2="162" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <!-- demand (amber dashed, ~flat high) -->
+            <polyline points="30,66 90,60 150,64 210,58 270,63 332,60" fill="none" stroke="var(--b)" stroke-width="2.4" stroke-dasharray="6 4" stroke-linecap="round"/>
+            <!-- renewable output (teal, dips in the middle) -->
+            <polyline points="30,74 68,58 104,88 140,132 178,151 208,149 236,116 272,72 304,62 332,70" fill="none" stroke="var(--a)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- labels -->
+            <text x="178" y="180" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)" font-family="system-ui">Dunkelflaute</text>
+            <text x="300" y="52" text-anchor="end" font-size="10" font-weight="700" fill="var(--b)" font-family="system-ui">demand</text>
+            <text x="86" y="50" font-size="10" font-weight="700" fill="var(--a)" font-family="system-ui">renewables</text>
+          </svg>
+          <p class="cap"><b>The gap that must be filled.</b> When combined wind + solar collapses for days, capacity, storage, or imports have to cover the shortfall.</p>
+        </div>
+      </div>
+    </div>
+    <footer><span>PECD v4.2 · Hackathon tracks</span><span>03 / 03</span></footer>
+  </section>
+
+</div>

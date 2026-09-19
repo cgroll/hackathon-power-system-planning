@@ -1,31 +1,91 @@
 stages:
-  prepare_capacity_factors:
-    cmd: uv run python pipeline/01_prepare_capacity_factors.py
+  download_pecd_capacity_factors:
+    cmd: uv run python pipeline/01_download_pecd_capacity_factors.py
     deps:
-      - pipeline/01_prepare_capacity_factors.py
-      # Note: also reads ~/research/pecd-replication/data/processed/*.parquet,
-      # which lives outside this repo and is intentionally not tracked as a
-      # formal DVC dependency — see the script's module docstring.
+      - pipeline/01_download_pecd_capacity_factors.py
+      - hpsp/cds.py
     outs:
-      - data/processed/capacity_factors_de_national.parquet:
+      # One directory output, not one entry per (technology, year-chunk)
+      # zip: 6 technologies x 5 ten-year chunks = 30 files, chunked only
+      # to stay under the CDS API's per-request cost limit (see
+      # pipeline/01's docstring) -- DVC just needs to know the directory
+      # as a whole is this stage's output.
+      - data/downloads/pecd/:
           persist: true
 
-  dunkelflaute_battery_starter:
-    cmd: >-
-      MPLBACKEND=Agg uv run jupytext --to notebook --execute
-      --set-kernel python3
-      --output book/notebooks/02_dunkelflaute_battery_starter.ipynb
-      pipeline/02_dunkelflaute_battery_starter.py &&
-      uv run python pipeline/_strip_jupytext_metadata.py
-      book/notebooks/02_dunkelflaute_battery_starter.ipynb
+  process_pecd_capacity_factors:
+    cmd: uv run python pipeline/02_process_pecd_capacity_factors.py
     deps:
-      - pipeline/02_dunkelflaute_battery_starter.py
-      - hpsp/capacity_assumptions.py
-      - data/processed/capacity_factors_de_national.parquet
+      - pipeline/02_process_pecd_capacity_factors.py
+      - hpsp/pecd_io.py
+      - data/downloads/pecd/
     outs:
-      - book/notebooks/02_dunkelflaute_battery_starter.ipynb:
+      - data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet:
+          persist: true
+      - data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet:
+          persist: true
+      - data/processed/_intermediate/capacity_factors_zonal_solar.parquet:
+          persist: true
+
+  # Track A's raw(ish) MaStR ingredients: per-unit wind/solar capacity
+  # records + small PECD region-mask lookup tables. Deliberately not
+  # zone-joined or month-aggregated -- that's Track A's own exercise, see
+  # the script's module docstring.
+  prepare_mastr_track_a_inputs:
+    cmd: uv run python pipeline/03_prepare_mastr_track_a_inputs.py
+    deps:
+      - pipeline/03_prepare_mastr_track_a_inputs.py
+      # Also reads already-processed MaStR unit data + PECD region masks
+      # from ~/research/mastr-power-capacities-germany, outside this repo
+      # and intentionally not tracked as a formal DVC dependency — see
+      # the script's docstring.
+    outs:
+      - data/processed/mastr_units_wind_solar.parquet:
           cache: false
-      - output/images/02_dunkelflaute_event_durations.png:
+      - data/processed/pecd_region_mask_peon.parquet:
           cache: false
-      - output/images/02_battery_sensitivity.png:
+      - data/processed/pecd_region_mask_peof.parquet:
+          cache: false
+
+  # Track B: national, fixed-capacity capacity-factor series (1980-2025).
+  # Unweighted mean across zones, deliberately not using pipeline/03's
+  # MaStR weights -- see pipeline/04's module docstring for why.
+  prepare_capacity_factors_national:
+    cmd: uv run python pipeline/04_prepare_capacity_factors_national.py
+    deps:
+      - pipeline/04_prepare_capacity_factors_national.py
+      - data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet
+      - data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet
+      - data/processed/_intermediate/capacity_factors_zonal_solar.parquet
+    outs:
+      - data/processed/capacity_factors_de_national.parquet:
+          cache: false
+
+  # Track A: zonal, time-varying capacity-factor series (2015-2025).
+  prepare_capacity_factors_zonal:
+    cmd: uv run python pipeline/05_prepare_capacity_factors_zonal.py
+    deps:
+      - pipeline/05_prepare_capacity_factors_zonal.py
+      - data/processed/_intermediate/capacity_factors_zonal_wind_onshore.parquet
+      - data/processed/_intermediate/capacity_factors_zonal_wind_offshore.parquet
+      - data/processed/_intermediate/capacity_factors_zonal_solar.parquet
+    outs:
+      - data/processed/capacity_factors_zonal_wind_onshore.parquet:
+          cache: false
+      - data/processed/capacity_factors_zonal_wind_offshore.parquet:
+          cache: false
+      - data/processed/capacity_factors_zonal_solar.parquet:
+          cache: false
+
+  prepare_demand_and_generation:
+    cmd: uv run python pipeline/06_prepare_demand_and_generation.py
+    deps:
+      - pipeline/06_prepare_demand_and_generation.py
+      # Also reads ~/research/pecd-replication/data/processed/target_panel.parquet,
+      # outside this repo and intentionally not tracked as a formal DVC
+      # dependency — see the script's docstring.
+    outs:
+      - data/processed/demand_de_national.parquet:
+          cache: false
+      - data/processed/generation_de_by_technology.parquet:
           cache: false
