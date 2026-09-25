@@ -8,15 +8,15 @@ Everything under `data/input/` is copied, unmodified, from
 [energy-data-hub](https://github.com/cgroll/energy-data-hub) — a shared
 data-ingestion project (not part of this repo) that downloads and lightly
 parses PECD, MaStR, SMARD, and region-geometry data for several related
-projects. Copying it here means this repo has a working data starting
-point right after cloning, no CDS or MaStR account needed. Because it's
-just a copy, if you want to know exactly how a file was produced (the raw
-download, the parsing, any unit conversions), the hub's own repository —
-in particular `edh/pecd.py` and `edh/mastr.py` — is the authoritative
-place to look, not this repo.
+projects. Because it's just a copy, if you want to know exactly how a file
+was produced (the raw download, the parsing, any unit conversions), the
+hub's own repository — in particular `edh/pecd.py` and `edh/mastr.py` — is
+the authoritative place to look, not this repo.
 
-`data/input/` is **git-ignored, not committed** — it ships as part of the
-repo checkout/archive you were given, not via git history.
+`data/input/` is **fetched automatically**: `dvc repro`/`make run`'s first
+stage (`pipeline/download_input_data.py`) downloads a zip of the hub's
+relevant output and unpacks it here, no CDS or MaStR account needed. It's
+**git-ignored, not committed** to this repo's history.
 
 Two related public sources, if you want to go further upstream than the
 hub itself:
