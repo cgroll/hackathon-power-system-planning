@@ -36,12 +36,13 @@ logic — so those decisions stay the hackathon teams' to make.
 
 ## Data
 
-`data/input/` is copied from [energy-data-hub](https://github.com/cgroll/energy-data-hub)
-— a shared data-ingestion project that handles the CDS/MaStR downloads and
-parsing so this repo doesn't have to. It's **git-ignored, not committed**:
-you get it as part of this repo's checkout/archive, not via git history.
-See [`book/markdown/data_sources.md`](book/markdown/data_sources.md) for
-the full breakdown, including a [video walkthrough](https://youtu.be/vS_A549w3Ss)
+`data/input/` is fetched automatically — `dvc repro`'s first stage
+downloads a shared archive of [energy-data-hub](https://github.com/cgroll/energy-data-hub)'s
+output (a project that handles the CDS/MaStR downloads and parsing so this
+repo doesn't have to) and unpacks it. Run `make run` and it's there — no
+CDS/MaStR account, no manual copying. It's **git-ignored, not committed**
+to this repo's history. See [`book/markdown/data_sources.md`](book/markdown/data_sources.md)
+for the full breakdown, including a [video walkthrough](https://youtu.be/vS_A549w3Ss)
 of linking MaStR data to PECD's weather zones.
 
 **Track B** (national, ready to use):
@@ -78,10 +79,12 @@ make run       # execute the pipeline (only reruns stages that are stale)
 make serve     # open http://localhost:3000 — live book preview
 ```
 
-`make run` builds the one example notebook shipped in this repo
-(`pipeline/01_explore_capacity_factors_de.py` → `book/notebooks/01_explore_capacity_factors_de.ipynb`)
-from `data/input/`. Add your own pipeline stages the same way as you build
-out either track — see [AGENTS.md](AGENTS.md) for the conventions.
+`make run` first downloads `data/input/` (skipped on later runs — see
+`persist: true` in [AGENTS.md](AGENTS.md)), then builds the two example
+notebooks shipped in this repo (`pipeline/00_explore_input_data.py` and
+`pipeline/01_explore_capacity_factors_de.py`). Add your own pipeline
+stages the same way as you build out either track — see
+[AGENTS.md](AGENTS.md) for the conventions.
 
 ## Project layout
 
@@ -91,7 +94,9 @@ project-root/
 │   ├── paths.py             # Centralized path config
 │   └── capacity_assumptions.py  # Track B's fixed "today" capacity
 ├── pipeline/
-│   ├── 01_explore_capacity_factors_de.py   # Example analysis script
+│   ├── download_input_data.py              # Fetches data/input/ (this repo's only network stage)
+│   ├── 00_explore_input_data.py            # Example: inventory of data/input/
+│   ├── 01_explore_capacity_factors_de.py   # Example: first-look analysis
 │   └── _strip_jupytext_metadata.py         # Shared post-processing helper
 ├── book/                    # MyST book source
 │   ├── notebooks/           # Executed notebooks (DVC output)
@@ -99,7 +104,7 @@ project-root/
 │   └── myst.yml             # TOC and site settings
 ├── slides/                  # Public-facing hackathon overview (both tracks)
 ├── data/
-│   ├── input/                # Copied from energy-data-hub — git-ignored
+│   ├── input/                # Fetched from energy-data-hub — git-ignored
 │   └── processed/            # Your own pipeline's outputs (empty until you add a stage)
 ├── output/images/           # Figures (tracked in git)
 ├── dvc.yaml                 # Pipeline DAG

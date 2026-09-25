@@ -207,3 +207,26 @@ stages:
       hash: md5
       md5: 8441ea2fc623bbc6eeb33cf274612883
       size: 110676
+  download_input_data:
+    cmd: uv run python pipeline/download_input_data.py
+    deps:
+    - path: pipeline/download_input_data.py
+      hash: md5
+      md5: a7e88ed71012bf903dc90432bc90b024
+      size: 1815
+    outs:
+    - path: data/input/mastr/
+      hash: md5
+      md5: 756ee61cf6ecf2ada646287b2c9f01fe.dir
+      size: 287980756
+      nfiles: 3
+    - path: data/input/pecd/
+      hash: md5
+      md5: c41190c08fbe2052aadb1fcae7f00388.dir
+      size: 420693787
+      nfiles: 7
+    - path: data/input/regions/
+      hash: md5
+      md5: ae9117bed0881a9279fef1c4318f8f0e.dir
+      size: 66832
+      nfiles: 1

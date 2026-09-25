@@ -66,11 +66,12 @@ to do.
 
 ## Data
 
-All input data lives in `data/input/`, copied from
-[energy-data-hub](https://github.com/cgroll/energy-data-hub) — **git-ignored,
-not committed to this repo's history**, but included in the checkout/archive
-teams start from. Full breakdown, column reference, and the
-MaStR↔PECD linking recipe: [`book/markdown/data_sources.md`](book/markdown/data_sources.md),
+`data/input/` is fetched automatically by the pipeline's first stage
+(`download_input_data`, `dvc repro`/`make run`) from a Dropbox-hosted zip
+of [energy-data-hub](https://github.com/cgroll/energy-data-hub)'s output —
+**git-ignored, not committed to this repo's history**, no CDS/MaStR
+account needed. Full breakdown, column reference, and the MaStR↔PECD
+linking recipe: [`book/markdown/data_sources.md`](book/markdown/data_sources.md),
 plus a [video walkthrough](https://youtu.be/vS_A549w3Ss) of that same
 linking exercise.
 
@@ -78,21 +79,27 @@ SMARD data (both demand and generation) is **intentionally not shipped**
 — fetching and aligning it with the hourly PECD timestamps is part of
 both tracks' exercise, not a pre-solved input.
 
-Two files in `data/input/` exceed GitHub's 100MB per-file limit
+Two files in the archive exceed GitHub's 100MB per-file limit
 (`mastr/solar.parquet`, ~202MB; `pecd_country_capacity_factors_simple.parquet`,
-the all-Europe file, ~222MB) — not a problem while `data/input/` stays
-git-ignored, but worth knowing if the distribution approach changes later
-(options: Git LFS, trimming columns, or dropping the all-Europe file
-since Track B only needs the DE one).
+the all-Europe file, ~222MB) — not a problem while it's distributed via a
+plain download link rather than git, but worth knowing if that ever
+changes (options: Git LFS, trimming columns, or dropping the all-Europe
+file since Track B only needs the DE one). The Dropbox link itself is a
+personal share link (see `pipeline/download_input_data.py`'s docstring
+for how to regenerate it if it ever breaks) — fine for a hackathon, not a
+permanent hosting solution.
 
 ## Current State
 
-Input data is staged and one example analysis exists:
-`pipeline/01_explore_capacity_factors_de.py` → `book/notebooks/01_explore_capacity_factors_de.ipynb`,
-a descriptive first look at Track B's national capacity-factor series
-(seasonality, a calm vs. a windy week, wind/solar correlation) — shows
-the analysis-script pattern this repo uses, not a solution to either
-track's tasks. `dvc repro` runs clean end-to-end.
+`dvc repro` runs clean end-to-end, from a fresh clone: `download_input_data`
+fetches `data/input/`, then two example notebooks build on top of it —
+`pipeline/00_explore_input_data.py` (an inventory of every file in
+`data/input/`: row counts, time ranges, missingness) and
+`pipeline/01_explore_capacity_factors_de.py` (a descriptive first look at
+Track B's national capacity-factor series — seasonality, a calm vs. a
+windy week, wind/solar correlation). Both are examples of the
+analysis-script pattern this repo uses, not a solution to either track's
+tasks.
 
 Nothing else is pre-built: no Dunkelflaute definition, no residual-load
 or battery logic, no MaStR↔PECD zone linking, no SMARD data. That's the

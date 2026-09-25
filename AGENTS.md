@@ -27,10 +27,10 @@ project-root/
 │   ├── markdown/            # Static hand-written content
 │   └── myst.yml             # Book configuration and table of contents
 ├── data/
-│   ├── input/               # Copied from energy-data-hub (git-ignored, see
-│   │                         # book/markdown/data_sources.md) — starting material,
-│   │                         # not produced by this repo's own pipeline
-│   └── processed/           # Outputs of this repo's own pipeline stages;
+│   ├── input/               # Fetched by pipeline/download_input_data.py from a
+│   │                         # shared archive (git-ignored, see
+│   │                         # book/markdown/data_sources.md for provenance)
+│   └── processed/           # Outputs of this repo's own analysis pipeline stages;
 │                             # git-tracked exceptions use `cache: false`
 ├── output/
 │   ├── images/              # Chart images saved by pipeline scripts
@@ -86,9 +86,30 @@ output you want teams to have right after cloning (without re-running the
 pipeline) should instead stay as normal files tracked directly by git (see
 [Git Conventions](#git-conventions)), declared with `cache: false`. DVC
 still hashes the file to detect staleness; it just doesn't duplicate it
-into `.dvc/cache`. `data/input/` is the exception in the other direction:
-it's not a pipeline output at all (see [Project Structure](#project-structure)),
-so it's just git-ignored outright, no DVC stage involved.
+into `.dvc/cache`.
+
+### `persist: true` for downloaded data
+
+`data/input/` is produced by one stage (`download_input_data`) that fetches
+a shared archive over the network — the exception to the rule above, since
+that data is neither reproduced by hashing its own inputs (there are none)
+nor small enough to track in git. Its outputs use `persist: true` so DVC
+leaves an existing download in place on every `dvc repro` instead of
+re-fetching it:
+
+```yaml
+stages:
+  download_data:
+    cmd: uv run python pipeline/download_data.py
+    deps:
+      - pipeline/download_data.py
+    outs:
+      - data/input/some_dir/:
+          persist: true
+```
+
+To force a fresh download: delete the output directory (or run `dvc repro
+-f download_input_data`).
 
 ### Running the pipeline
 
@@ -211,7 +232,7 @@ Key paths:
 | Property | Directory |
 |----------|-----------|
 | `paths.data_path` | `data/` |
-| `paths.input_path` | `data/input/` (copied from energy-data-hub, see `book/markdown/data_sources.md`) |
+| `paths.input_path` | `data/input/` (fetched from [energy-data-hub](https://github.com/cgroll/energy-data-hub), see `book/markdown/data_sources.md`) |
 | `paths.processed_data_path` | `data/processed/` |
 | `paths.images_path` | `output/images/` |
 | `paths.pipeline_path` | `pipeline/` |

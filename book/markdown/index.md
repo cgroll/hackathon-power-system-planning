@@ -28,7 +28,7 @@ Hourly capacity factors for German wind onshore, wind offshore, and solar
 come from the official [PECD v4.2](https://cds.climate.copernicus.eu/datasets/sis-energy-pecd)
 product, and installed-capacity figures from the
 [Marktstammdatenregister](https://www.marktstammdatenregister.de/MaStR/Datendownload)
-(MaStR). Both are staged in `data/input/`, copied from
+(MaStR). Both are fetched automatically into `data/input/` from
 [energy-data-hub](https://github.com/cgroll/energy-data-hub) — a shared
 data-ingestion project that downloads and lightly parses this data so
 individual projects like this one don't each need their own CDS/MaStR
@@ -47,7 +47,9 @@ team to build.
 ## How to read this book
 
 [Data Sources](data_sources.md) walks through what's in `data/input/` and
-where it comes from. [Exploring Germany's PECD Capacity Factors](01_explore_capacity_factors_de.ipynb)
-is a small example notebook showing the kind of first-look analysis a
-`pipeline/` script in this repo produces — a starting pattern, not a
-solution to either track's tasks.
+where it comes from. Two small example notebooks show the kind of
+analysis a `pipeline/` script in this repo produces — starting patterns,
+not solutions to either track's tasks: [Input Data Overview](00_explore_input_data.ipynb)
+(an inventory of every file in `data/input/`) and
+[Exploring Germany's PECD Capacity Factors](01_explore_capacity_factors_de.ipynb)
+(a first look at Track B's national capacity-factor series).

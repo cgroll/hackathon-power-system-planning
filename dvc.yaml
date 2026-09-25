@@ -1,4 +1,21 @@
 stages:
+  # This repo's only network-dependent stage: fetches data/input/ from a
+  # shared archive (energy-data-hub's output, zipped -- see
+  # book/markdown/data_sources.md). persist: true means an existing
+  # download is left alone on every `dvc repro`; delete the output dirs
+  # (or `dvc repro -f download_input_data`) to force a fresh fetch.
+  download_input_data:
+    cmd: uv run python pipeline/download_input_data.py
+    deps:
+      - pipeline/download_input_data.py
+    outs:
+      - data/input/pecd/:
+          persist: true
+      - data/input/mastr/:
+          persist: true
+      - data/input/regions/:
+          persist: true
+
   # Example analysis stage, over Track B's ready-to-use national PECD
   # series -- shows the jupytext-script-to-notebook pattern this repo
   # uses (see AGENTS.md). Add your own stages the same way as you build
