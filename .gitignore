@@ -14,26 +14,20 @@ build/
 .Python
 env/
 
-# Data (managed by DVC, not git)
-data/downloads/*
-data/processed/*
-!data/downloads/.gitkeep
-!data/processed/.gitkeep
+# Data
+# data/input/ is copied from energy-data-hub (see book/markdown/data_sources.md)
+# and not committed here — teams get it as part of the repo checkout, not
+# via git history. Two files in it exceed GitHub's 100MB per-file limit if
+# this policy ever changes (mastr/solar.parquet, pecd_country_capacity_factors_simple.parquet).
+data/input/*
+!data/input/.gitkeep
 
-# Exception: this repo's actual hackathon deliverables (small, final,
-# `cache: false` in dvc.yaml) ship directly in git so teams have them right
-# after cloning, no CDS/MaStR account needed — see PROJECT.md, 2026-09-18.
-# Everything else under data/processed/ (in particular _intermediate/,
-# rebuilt from data/downloads/) stays git-ignored.
-!data/processed/capacity_factors_de_national.parquet
-!data/processed/demand_de_national.parquet
-!data/processed/capacity_factors_zonal_wind_onshore.parquet
-!data/processed/capacity_factors_zonal_wind_offshore.parquet
-!data/processed/capacity_factors_zonal_solar.parquet
-!data/processed/mastr_units_wind_solar.parquet
-!data/processed/pecd_region_mask_peon.parquet
-!data/processed/pecd_region_mask_peof.parquet
-!data/processed/generation_de_by_technology.parquet
+# data/processed/ is empty until a pipeline stage (yours, or the example
+# one in dvc.yaml) writes something here. Add `!data/processed/<file>`
+# exceptions for any output you want git-tracked directly (`cache: false`
+# in dvc.yaml), same pattern as book/notebooks/*.ipynb and output/images/*.png.
+data/processed/*
+!data/processed/.gitkeep
 
 # Secrets
 .env

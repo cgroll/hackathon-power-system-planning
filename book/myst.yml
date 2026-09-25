@@ -11,9 +11,9 @@ project:
     - '**.ipynb_checkpoints'
   toc:
     - file: markdown/index.md
-    - title: Analysis
-      children:
-        - file: notebooks/02_dunkelflaute_battery_starter.ipynb
+    - file: markdown/data_sources.md
+    - file: notebooks/00_explore_input_data.ipynb
+    - file: notebooks/01_explore_capacity_factors_de.ipynb
 site:
   options:
     folders: true

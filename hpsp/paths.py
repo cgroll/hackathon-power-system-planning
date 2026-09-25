@@ -48,13 +48,37 @@ class ProjPaths:
         return self._project_path / "data"
 
     @property
-    def downloads_path(self) -> Path:
-        """Raw downloaded data."""
-        return self.data_path / "downloads"
+    def input_path(self) -> Path:
+        """Input data copied from `energy-data-hub` (git-ignored, not committed).
+
+        See `book/markdown/data_sources.md` for exactly what's here and
+        where it comes from. Nothing under this directory is produced by
+        this repo's own pipeline -- it's the starting material.
+        """
+        return self.data_path / "input"
+
+    @property
+    def input_pecd_path(self) -> Path:
+        """PECD v4.2 capacity-factor data (zonal + national-aggregated)."""
+        return self.input_path / "pecd"
+
+    @property
+    def input_mastr_path(self) -> Path:
+        """Lightly-processed, unit-level Marktstammdatenregister (MaStR) data."""
+        return self.input_path / "mastr"
+
+    @property
+    def input_regions_path(self) -> Path:
+        """Region-code crosswalks (LAU/NUTS)."""
+        return self.input_path / "regions"
 
     @property
     def processed_data_path(self) -> Path:
-        """Processed/transformed data."""
+        """Processed/transformed data produced by this repo's own pipeline.
+
+        Empty until a pipeline stage (yours, or the example one in
+        `pipeline/01_explore_capacity_factors_de.py`) writes something here.
+        """
         return self.data_path / "processed"
 
     # ------------------------------------------------------------------ #
@@ -76,153 +100,106 @@ class ProjPaths:
         """Report files."""
         return self.output_path / "reports"
 
-    @property
-    def intermediate_data_path(self) -> Path:
-        """Build-only intermediate outputs -- not tracked in git (see .gitignore).
+    # ------------------------------------------------------------------ #
+    # Track A input: zonal PECD capacity factors + region masks (2015-2025) #
+    # ------------------------------------------------------------------ #
 
-        Distinct from `processed_data_path` (which holds the final,
-        git-tracked Track A/B deliverables) so the two are never confused:
-        anything here is fully rebuildable from `data/downloads/` and isn't
-        itself something a hackathon team should read from.
+    @property
+    def pecd_capacity_factors_zonal_wind_onshore(self) -> Path:
+        """Germany-only PEON wind-onshore capacity factors, hourly, 2015-2025.
+
+        Columns `DE01`-`DE07` (one per PEON zone).
         """
-        return self.processed_data_path / "_intermediate"
+        return self.input_pecd_path / "pecd_wind_onshore_capacity_factors.parquet"
 
     @property
-    def pecd_downloads_path(self) -> Path:
-        """Raw PECD v4.2 CDS downloads (pipeline/01)."""
-        return self.downloads_path / "pecd"
+    def pecd_capacity_factors_zonal_wind_offshore(self) -> Path:
+        """Germany-only PEOF wind-offshore capacity factors, hourly, 2015-2025.
 
-    # ------------------------------------------------------------------ #
-    # PECD raw downloads (pipeline/01)                                     #
-    # ------------------------------------------------------------------ #
-
-    def pecd_capacity_factor_zip(self, kind: str, technology: str, start_year: int, end_year: int) -> Path:
-        """Raw CDS capacity-factor download, all of Europe, one 10-year chunk.
-
-        `kind` is one of "solar", "wind_onshore", "wind_offshore";
-        `technology` is PECD's technology code (e.g. "60" for solar
-        industrial rooftop, "30" for existing onshore wind). Chunked by
-        year range (not one file per `kind`/`technology`) because a single
-        1980-2025 request exceeds the CDS API's per-request cost limit —
-        see pipeline/01's module docstring.
+        Columns `DE011_OFF` etc. (one per PEOF zone).
         """
-        return self.pecd_downloads_path / f"{kind}_tech{technology}_{start_year}-{end_year}.zip"
-
-    def pecd_capacity_factor_zips(self, kind: str, technology: str) -> list[Path]:
-        """All downloaded year-chunk zips for one (kind, technology), sorted by start year."""
-        return sorted(self.pecd_downloads_path.glob(f"{kind}_tech{technology}_*.zip"))
-
-    # ------------------------------------------------------------------ #
-    # Intermediate zonal capacity factors, full 1980-2025 (pipeline/02)    #
-    # ------------------------------------------------------------------ #
+        return self.input_pecd_path / "pecd_wind_offshore_capacity_factors.parquet"
 
     @property
-    def capacity_factors_zonal_wind_onshore_intermediate(self) -> Path:
-        """Germany-only PEON wind-onshore capacity factors, hourly, full 1980-2025 range."""
-        return self.intermediate_data_path / "capacity_factors_zonal_wind_onshore.parquet"
+    def pecd_capacity_factors_zonal_solar(self) -> Path:
+        """Germany-only NUTS2 solar capacity factors, hourly, 2015-2025.
 
-    @property
-    def capacity_factors_zonal_wind_offshore_intermediate(self) -> Path:
-        """Germany-only PEOF wind-offshore capacity factors, hourly, full 1980-2025 range."""
-        return self.intermediate_data_path / "capacity_factors_zonal_wind_offshore.parquet"
-
-    @property
-    def capacity_factors_zonal_solar_intermediate(self) -> Path:
-        """Germany-only NUTS2 solar capacity factors, hourly, full 1980-2025 range.
-
-        MultiIndex columns (technology, region): 4 PECD PV sub-types x DE
-        NUTS2 regions.
+        MultiIndex columns (technology, region): PECD's 4 PV sub-technology
+        codes (60/61/62/63) x DE NUTS2 regions.
         """
-        return self.intermediate_data_path / "capacity_factors_zonal_solar.parquet"
-
-    # ------------------------------------------------------------------ #
-    # Track A deliverables: zonal capacity factors + raw MaStR ingredients #
-    # (pipeline/03, 05, 06)                                                #
-    # ------------------------------------------------------------------ #
-
-    @property
-    def mastr_units_wind_solar(self) -> Path:
-        """Per-unit MaStR wind + solar capacity records (Track A raw ingredient).
-
-        Built by pipeline/03_prepare_mastr_track_a_inputs.py. Columns:
-        technology ("solar"/"wind" -- onshore/offshore not yet split),
-        region_code (MaStR's own NUTS3-like code, not a PECD zone),
-        capacity_mw, commissioning_date, final_shutdown_date, longitude,
-        latitude, installation_type, usage_sector, main_orientation,
-        main_orientation_tilt_bucket (the last 4 are solar-only, NaN for
-        wind -- everything needed to classify a solar unit into PECD's 4
-        technology codes, see pipeline/03's docstring for the rule), and
-        pv_category (solar-only: full_feed_in / self_consumption_no_storage
-        / self_consumption_with_storage / unknown -- a different axis, not
-        needed for the technology split, not used by anything in this
-        repo's hackathon scope, but cheap to carry along for later
-        behind-the-meter/self-consumption analysis, see PROJECT.md,
-        2026-09-18). No unit_id: already used internally to join the
-        orientation columns in from a separate MaStR table, then dropped
-        -- keeping it would have added ~40 MB for no pedagogical benefit
-        (it's a join key, not part of the classification exercise).
-        Deliberately *not* zone-joined, technology-classified, or
-        month-aggregated -- that's Track A's exercise, see the script's
-        module docstring.
-        """
-        return self.processed_data_path / "mastr_units_wind_solar.parquet"
+        return self.input_pecd_path / "pecd_solar_capacity_factors.parquet"
 
     @property
     def pecd_region_mask_peon(self) -> Path:
-        """PEON (wind onshore) zone-membership weights per 0.25-degree grid cell, Germany only.
+        """PEON (wind onshore) zone-membership raster, all of Europe.
 
-        Built by pipeline/03, cropped from PECD's full-Europe region mask.
-        Columns: zone_id, latitude, longitude, weight (nonzero only) --
-        the fractional area of that cell covered by that zone. Use with
-        `mastr_units_wind_solar`'s coordinates (nearest-cell snap) to
-        assign each unit to a PEON zone (Track A's exercise).
+        NetCDF, dims (region, latitude, longitude), 0.25-degree grid.
+        Subset `region` to values starting `"DE"` for Germany's zones.
         """
-        return self.processed_data_path / "pecd_region_mask_peon.parquet"
+        return self.input_pecd_path / "peon_region_mask.nc"
 
     @property
     def pecd_region_mask_peof(self) -> Path:
         """Same as `pecd_region_mask_peon`, for PEOF (wind offshore) zones."""
-        return self.processed_data_path / "pecd_region_mask_peof.parquet"
-
-    @property
-    def capacity_factors_zonal_wind_onshore(self) -> Path:
-        """Germany-only PEON wind-onshore capacity factors, hourly, 2015-2025 (Track A)."""
-        return self.processed_data_path / "capacity_factors_zonal_wind_onshore.parquet"
-
-    @property
-    def capacity_factors_zonal_wind_offshore(self) -> Path:
-        """Germany-only PEOF wind-offshore capacity factors, hourly, 2015-2025 (Track A)."""
-        return self.processed_data_path / "capacity_factors_zonal_wind_offshore.parquet"
-
-    @property
-    def capacity_factors_zonal_solar(self) -> Path:
-        """Germany-only NUTS2 solar capacity factors, hourly, 2015-2025 (Track A)."""
-        return self.processed_data_path / "capacity_factors_zonal_solar.parquet"
-
-    @property
-    def generation_de_by_technology(self) -> Path:
-        """SMARD actual per-technology grid feed-in: pv, wind_onshore, wind_offshore (Track A)."""
-        return self.processed_data_path / "generation_de_by_technology.parquet"
+        return self.input_pecd_path / "peof_region_mask.nc"
 
     # ------------------------------------------------------------------ #
-    # Track B deliverables: national, fixed "today" capacity (pipeline/04, 06) #
+    # Track B input: national-aggregated PECD capacity factors (1980-2025) #
     # ------------------------------------------------------------------ #
 
     @property
-    def capacity_factors_de_national(self) -> Path:
-        """Hourly national capacity factors for DE (wind onshore/offshore, solar).
+    def pecd_capacity_factors_national_de(self) -> Path:
+        """Hourly national capacity factors for Germany, 1980-2025, ready to use.
 
-        Built by pipeline/04_prepare_capacity_factors_national.py: official
-        PECD zone-level product, capacity-weighted to national using
-        *today's* (latest available month's) fixed MaStR snapshot, 1980-2025.
-        Columns: wind_onshore, wind_offshore, solar (all in [0, 1]).
+        Columns: wind_onshore, wind_offshore, solar (all in [0, 1]). See
+        `book/markdown/data_sources.md` for the aggregation method and its
+        known simplifications.
         """
-        return self.processed_data_path / "capacity_factors_de_national.parquet"
+        return self.input_pecd_path / "pecd_country_capacity_factors_simple_de.parquet"
 
     @property
-    def demand_de_national(self) -> Path:
-        """Hourly national electricity demand for DE, MW (Track B, `demand_mw` column)."""
-        return self.processed_data_path / "demand_de_national.parquet"
+    def pecd_capacity_factors_national_europe(self) -> Path:
+        """Same as `pecd_capacity_factors_national_de`, all ~53 PECD countries.
+
+        Wide columns, MultiIndex (technology, country ISO2-ish code).
+        **Caveat:** the solar blend uses Germany's own technology-mix
+        weights for every country -- see `book/markdown/data_sources.md`.
+        """
+        return self.input_pecd_path / "pecd_country_capacity_factors_simple.parquet"
+
+    # ------------------------------------------------------------------ #
+    # Track A input: raw(ish) MaStR unit-level records                     #
+    # ------------------------------------------------------------------ #
+
+    @property
+    def mastr_solar_units(self) -> Path:
+        """Per-unit MaStR solar records (~6.3M rows), not zone-joined or aggregated."""
+        return self.input_mastr_path / "solar.parquet"
+
+    @property
+    def mastr_wind_units(self) -> Path:
+        """Per-unit MaStR wind records (~43K rows), not zone-joined or aggregated.
+
+        Includes `wind_onshore_or_offshore` directly -- no derivation needed
+        for the onshore/offshore split.
+        """
+        return self.input_mastr_path / "wind.parquet"
+
+    @property
+    def mastr_solar_technical_detail(self) -> Path:
+        """Per-solar-unit orientation/tilt detail. Join to `mastr_solar_units` via `unit_id`."""
+        return self.input_mastr_path / "solar_technical_detail.parquet"
+
+    @property
+    def lau_nuts_correspondence(self) -> Path:
+        """LAU (municipality_key) -> NUTS3 crosswalk.
+
+        Needed to map a solar unit's `municipality_key` to its NUTS3 region,
+        then to its NUTS2 parent (first 4 characters) -- solar units mostly
+        lack coordinates, so this string-based path is the way in, not the
+        region masks used for wind.
+        """
+        return self.input_regions_path / "lau_nuts_correspondence.parquet"
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #
@@ -231,10 +208,11 @@ class ProjPaths:
     def ensure_directories(self) -> None:
         """Create all standard directories if they do not yet exist."""
         dirs = [
-            self.downloads_path,
-            self.pecd_downloads_path,
+            self.input_path,
+            self.input_pecd_path,
+            self.input_mastr_path,
+            self.input_regions_path,
             self.processed_data_path,
-            self.intermediate_data_path,
             self.images_path,
             self.reports_path,
         ]

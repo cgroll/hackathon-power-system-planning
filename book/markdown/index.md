@@ -18,21 +18,36 @@ system, working up to three tasks:
    risk entirely — how far can they get you toward a partial target, e.g.
    95% (not 100%) renewable coverage of demand?
 
+Alongside this planning track, there's a second, validation-focused
+track: does the PECD weather-derived data actually match reality? See
+[Data Sources](data_sources.md) for both tracks' input data.
+
 ## About
 
 Hourly capacity factors for German wind onshore, wind offshore, and solar
-come from the PECD v4.2 replication in `~/research/pecd-replication`.
-Installed capacity is a rough, hand-entered approximation (see
-`hpsp/capacity_assumptions.py`) — deliberately **not** derived from the
-Marktstammdatenregister, to avoid the setup overhead of a ~12 GB bulk
-download for a short hackathon slot.
+come from the official [PECD v4.2](https://cds.climate.copernicus.eu/datasets/sis-energy-pecd)
+product, and installed-capacity figures from the
+[Marktstammdatenregister](https://www.marktstammdatenregister.de/MaStR/Datendownload)
+(MaStR). Both are staged in `data/input/`, copied from
+[energy-data-hub](https://github.com/cgroll/energy-data-hub) — a shared
+data-ingestion project that downloads and lightly parses this data so
+individual projects like this one don't each need their own CDS/MaStR
+account and multi-GB download. See [Data Sources](data_sources.md) for
+exactly what's included, and this
+[video walkthrough](https://youtu.be/vS_A549w3Ss) for how to link MaStR
+unit data to PECD's weather zones — the core step behind the validation
+track.
 
-This starter deliberately stops at data preparation: defining a
+This starter deliberately stops at staging the input data: defining a
 Dunkelflaute threshold, computing residual load against real demand, and
-building a battery-dispatch model are the three tasks above, left for your
-team to build — not pre-solved here.
+building a battery-dispatch model, or building and validating a
+modeled-potential series against observed generation, are left for your
+team to build.
 
 ## How to read this book
 
-The chapters are structured as executed notebooks. Each notebook corresponds
-to a pipeline script in `pipeline/` that was run by DVC.
+[Data Sources](data_sources.md) walks through what's in `data/input/` and
+where it comes from. [Exploring Germany's PECD Capacity Factors](01_explore_capacity_factors_de.ipynb)
+is a small example notebook showing the kind of first-look analysis a
+`pipeline/` script in this repo produces — a starting pattern, not a
+solution to either track's tasks.

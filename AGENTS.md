@@ -5,11 +5,10 @@ It is written for human contributors and AI agents alike.
 
 ## Project Tracking
 
-Current state, roadmap, and lessons learned are tracked in
-[PROJECT.md](PROJECT.md). Update it at the end of a work session: current
-state, what changed, what was learned, and the next step. The `wrap-up`
-skill (`.claude/skills/wrap-up/`) automates checking whether it needs
-updating.
+Current state and next steps are tracked in [PROJECT.md](PROJECT.md).
+Update it as the project moves forward: what's done, what's in progress,
+what's next. The `wrap-up` skill (`.claude/skills/wrap-up/`) automates
+checking whether it needs updating.
 
 ## Project Structure
 
@@ -17,20 +16,22 @@ updating.
 project-root/
 ├── hpsp/                    # Python package — shared utilities
 │   ├── __init__.py
-│   └── paths.py             # Centralized path configuration
+│   ├── paths.py             # Centralized path configuration
+│   └── capacity_assumptions.py  # Track B's fixed "today" capacity
 ├── pipeline/                # Data pipeline scripts
-│   ├── 01_download_*.py     # Pure data acquisition (no charts)
 │   ├── 0N_process_*.py / 0N_prepare_*.py  # Pure data processing (no charts)
-│   ├── 0N_analyse_*.py      # Analysis scripts → become book notebooks
+│   ├── 0N_analyse_*.py / 0N_explore_*.py  # Analysis scripts → become book notebooks
 │   └── _strip_jupytext_metadata.py  # Shared post-processing helper
 ├── book/                    # MyST Jupyter Book source
 │   ├── notebooks/           # Executed .ipynb files (produced by DVC)
 │   ├── markdown/            # Static hand-written content
 │   └── myst.yml             # Book configuration and table of contents
 ├── data/
-│   ├── downloads/           # Raw downloaded data (git-ignored, DVC-cached)
-│   └── processed/           # Final deliverables git-tracked (`cache: false`);
-│                             # build-only intermediates (_intermediate/) git-ignored
+│   ├── input/               # Copied from energy-data-hub (git-ignored, see
+│   │                         # book/markdown/data_sources.md) — starting material,
+│   │                         # not produced by this repo's own pipeline
+│   └── processed/           # Outputs of this repo's own pipeline stages;
+│                             # git-tracked exceptions use `cache: false`
 ├── output/
 │   ├── images/              # Chart images saved by pipeline scripts
 │   └── reports/             # Report files
@@ -63,7 +64,7 @@ stages:
     cmd: MPLBACKEND=Agg uv run jupytext ...
     deps:
       - pipeline/02_analyse.py
-      - data/downloads/raw.parquet
+      - data/input/pecd/some_input.parquet
     outs:
       - book/notebooks/02_analyse.ipynb:
           cache: false
@@ -79,39 +80,15 @@ must be committed to git).
 
 ### `cache: false` for git-tracked outputs
 
-By default DVC moves stage outputs into its own cache and git-ignores them —
-appropriate for `data/downloads/` (raw, large, regenerable) and any
-build-only intermediate under `data/processed/_intermediate/`. But
-`book/notebooks/*.ipynb`, `output/images/*.png`, and — in this repo — the
-final small `data/processed/*.parquet` deliverables teams actually consume
-should stay as normal files tracked directly by git (see
-[Git Conventions](#git-conventions)), so every such output is declared with
-`cache: false`. DVC still hashes the file to detect staleness; it just
-doesn't duplicate it into `.dvc/cache`. Whether a given `data/processed/`
-output should be `cache: false` is a per-project call, not a fixed rule:
-here it's small final Track A/B parquet files hackathon teams need right
-after cloning (see PROJECT.md, 2026-09-18); a project with genuinely large
-processed outputs would keep the default instead.
-
-### `persist: true` for downloaded data
-
-Downloaded files should not be wiped out and re-fetched every run. Mark
-their output with `persist: true` so DVC leaves the existing file in place
-whenever the stage is (re-)run:
-
-```yaml
-stages:
-  download_data:
-    cmd: uv run python pipeline/01_download.py
-    deps:
-      - pipeline/01_download.py
-    outs:
-      - data/downloads/raw.parquet:
-          persist: true
-```
-
-To force a fresh download: delete the file (or run `dvc repro -f
-download_data`).
+By default DVC moves stage outputs into its own cache and git-ignores them.
+`book/notebooks/*.ipynb`, `output/images/*.png`, and any `data/processed/`
+output you want teams to have right after cloning (without re-running the
+pipeline) should instead stay as normal files tracked directly by git (see
+[Git Conventions](#git-conventions)), declared with `cache: false`. DVC
+still hashes the file to detect staleness; it just doesn't duplicate it
+into `.dvc/cache`. `data/input/` is the exception in the other direction:
+it's not a pipeline output at all (see [Project Structure](#project-structure)),
+so it's just git-ignored outright, no DVC stage involved.
 
 ### Running the pipeline
 
@@ -142,13 +119,12 @@ maintain — running bare `dvc repro` builds every stage that is out of date.
 
 ### Two types of scripts
 
-**1. Pure data scripts** (`01_*`, `00_*`, …)
+**1. Pure data scripts** (`process_*.py`, `prepare_*.py`, …)
 - No charts or visualizations.
-- Read/write data files only.
-- Registered in `dvc.yaml` with `persist: true` outputs to avoid re-downloading.
+- Read from `data/input/` (or an earlier stage's `data/processed/` output), write to `data/processed/`.
 - Not converted to notebooks.
 
-**2. Analysis scripts** (`02_*`, `03_*`, …)
+**2. Analysis scripts** (`explore_*.py`, `analyse_*.py`, …)
 - Use jupytext `# %%` cell markers and a jupytext/kernelspec header.
 - Save all figures to `output/images/` via `fig.savefig()`.
 - Use MyST `{figure}` directives in `# %% [markdown]` cells.
@@ -203,7 +179,7 @@ stages:
       book/notebooks/03_my_analysis.ipynb
     deps:
       - pipeline/03_my_analysis.py
-      - data/downloads/raw.parquet
+      - data/input/pecd/some_input.parquet
     outs:
       - book/notebooks/03_my_analysis.ipynb:
           cache: false
@@ -226,7 +202,7 @@ from hpsp.paths import ProjPaths
 
 paths = ProjPaths()
 
-df = pd.read_parquet(paths.example_raw_file)
+df = pd.read_parquet(paths.pecd_capacity_factors_national_de)
 fig.savefig(paths.images_path / "03_chart.png")
 ```
 
@@ -235,7 +211,7 @@ Key paths:
 | Property | Directory |
 |----------|-----------|
 | `paths.data_path` | `data/` |
-| `paths.downloads_path` | `data/downloads/` |
+| `paths.input_path` | `data/input/` (copied from energy-data-hub, see `book/markdown/data_sources.md`) |
 | `paths.processed_data_path` | `data/processed/` |
 | `paths.images_path` | `output/images/` |
 | `paths.pipeline_path` | `pipeline/` |
@@ -248,31 +224,31 @@ Key paths:
    @property
    def my_new_file(self) -> Path:
        """One-line description."""
-       return self.downloads_path / "my_data.parquet"
+       return self.processed_data_path / "my_data.parquet"
    ```
 3. **Add a stage** to `dvc.yaml` with `cmd`, `deps`, and `outs` (use
-   `cache: false` for anything under `book/notebooks/` or `output/images/`,
-   and `persist: true` for downloaded data).
+   `cache: false` for anything under `book/notebooks/`, `output/images/`,
+   or a `data/processed/` file you want git-tracked directly).
 4. **Add the notebook** to the `toc` in `book/myst.yml`.
 
 ## Git Conventions
 
 | Tracked | Not tracked |
 |---------|-------------|
-| `pipeline/*.py` source files | `data/downloads/*` |
-| `book/notebooks/*.ipynb` generated notebooks | `data/processed/_intermediate/*` |
+| `pipeline/*.py` source files | `data/input/*` |
+| `book/notebooks/*.ipynb` generated notebooks | `data/processed/*` (unless excepted in `.gitignore`) |
 | `output/images/*.png` generated charts | `.venv/` |
 | `book/markdown/*.md` static content | |
 | `dvc.yaml`, `dvc.lock` | |
-| final `data/processed/*.parquet` deliverables (this repo's exception — see `.gitignore`) | |
+| any `data/processed/*.parquet` you explicitly except in `.gitignore` (`cache: false` in `dvc.yaml`) | |
 
-The `.ipynb` notebooks, images, and (in this repo) the final small
-`data/processed/*.parquet` outputs are tracked so both the book and the
-hackathon data can be used straight from a fresh clone without re-running
-the pipeline. This is why they are declared with `cache: false` in
-`dvc.yaml` — DVC still hashes them to detect staleness, but the files
-themselves live in git, not in `.dvc/cache`. Build-only intermediates
-(`data/processed/_intermediate/`) stay untracked, same as raw downloads.
+The `.ipynb` notebooks and images are tracked so the book can be built
+straight from a fresh clone without re-running the pipeline; this is why
+they're declared with `cache: false` in `dvc.yaml` — DVC still hashes them
+to detect staleness, but the files live in git, not in `.dvc/cache`.
+`data/input/` stays untracked entirely (see [Project Structure](#project-structure));
+`data/processed/` stays untracked by default too, with per-file exceptions
+added as your own pipeline stages produce something worth shipping.
 
 ## Workflow Summary
 
