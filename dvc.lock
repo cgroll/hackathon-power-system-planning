@@ -212,8 +212,8 @@ stages:
     deps:
     - path: pipeline/download_input_data.py
       hash: md5
-      md5: a7e88ed71012bf903dc90432bc90b024
-      size: 1815
+      md5: 236f3dc770e02d8610730dda46b051fc
+      size: 2845
     outs:
     - path: data/input/mastr/
       hash: md5
